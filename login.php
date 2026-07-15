@@ -30,9 +30,24 @@ if(isset($_POST['login'])){
 
             $message = "✅ Login Successful!";
 
-            // Temporary redirect
-            header("refresh:2; url=index.php");
-            exit();
+            $_SESSION['user_id'] = $user['id'];
+$_SESSION['fullname'] = $user['fullname'];
+$_SESSION['role'] = $user['role'];
+
+if($user['role'] == "citizen"){
+    header("Location: citizen/dashboard.php");
+    exit();
+}
+
+elseif($user['role'] == "responder"){
+    header("Location: responder/dashboard.php");
+    exit();
+}
+
+elseif($user['role'] == "admin"){
+    header("Location: admin/dashboard.php");
+    exit();
+}
 
         }else{
 
