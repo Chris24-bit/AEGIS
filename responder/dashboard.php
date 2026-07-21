@@ -1,47 +1,100 @@
 <?php
 session_start();
+require_once "../config/database.php";
 
-if(!isset($_SESSION['user_id'])){
+if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
+
+if ($_SESSION['role'] != "responder") {
+    header("Location: ../login.php");
+    exit();
+}
+
+$sql = "SELECT reports.*, users.fullname
+        FROM reports
+        INNER JOIN users ON reports.user_id = users.id
+        ORDER BY created_at DESC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute();
+
+$reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-<title>Citizen Dashboard</title>
+
+<title>Responder Dashboard</title>
 
 <style>
 
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
 body{
-    font-family:Arial;
-    background:#f4f4f4;
-    text-align:center;
-    margin-top:100px;
+background:#f4f4f4;
+padding:40px;
 }
 
-.box{
-
-    width:500px;
-    margin:auto;
-    background:white;
-    padding:30px;
-    border-radius:10px;
-    box-shadow:0 0 10px rgba(0,0,0,.2);
-
+.container{
+width:95%;
+margin:auto;
 }
 
-a{
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+}
 
-    display:inline-block;
-    margin-top:20px;
-    text-decoration:none;
-    background:red;
-    color:white;
-    padding:10px 20px;
-    border-radius:5px;
+th{
+background:#0d6efd;
+color:white;
+padding:15px;
+}
 
+td{
+padding:15px;
+border-bottom:1px solid #ddd;
+}
+
+tr:hover{
+background:#f8f8f8;
+}
+
+button{
+padding:8px 15px;
+background:#198754;
+color:white;
+border:none;
+cursor:pointer;
+border-radius:5px;
+}
+
+button:hover{
+background:#157347;
+}
+
+.pending{
+color:orange;
+font-weight:bold;
+}
+
+.accepted{
+color:blue;
+font-weight:bold;
+}
+
+.resolved{
+color:green;
+font-weight:bold;
 }
 
 </style>
@@ -50,19 +103,84 @@ a{
 
 <body>
 
-<div class="box">
+<div class="container">
 
-<h1>🚨 Responder Dashboard</h1>
+<h2>🚑 Responder Dashboard</h2>
 
-<h2>Welcome</h2>
+<br>
 
-<h3><?php echo $_SESSION['fullname']; ?></h3>
+<table>
 
-<p>Role :
-<b><?php echo $_SESSION['role']; ?></b>
-</p>
+<tr>
 
-<a href="../logout.php">Logout</a>
+<th>Citizen</th>
+<th>Emergency</th>
+<th>Location</th>
+<th>Description</th>
+<th>Status</th>
+<th>Action</th>
+
+</tr>
+
+<?php foreach($reports as $report){ ?>
+
+<tr>
+
+<td><?= htmlspecialchars($report['fullname']) ?></td>
+
+<td><?= htmlspecialchars($report['emergency_type']) ?></td>
+
+<td><?= htmlspecialchars($report['location']) ?></td>
+
+<td><?= htmlspecialchars($report['description']) ?></td>
+
+<td class="<?= strtolower($report['status']) ?>">
+<?= htmlspecialchars($report['status']) ?>
+</td>
+
+<td>
+
+<?php if($report['status']=="Pending"){ ?>
+
+<form method="POST" action="accept_report.php">
+
+<input type="hidden" name="report_id" value="<?= $report['id'] ?>">
+
+<button type="submit">
+✅ Accept
+</button>
+
+</form>
+
+<?php }elseif($report['status']=="Accepted"){ ?>
+
+<form method="POST" action="resolve_report.php">
+
+<input type="hidden" name="report_id" value="<?= $report['id'] ?>">
+
+<button
+style="background:#dc3545;"
+type="submit">
+
+✔ Resolve
+
+</button>
+
+</form>
+
+<?php }else{ ?>
+
+✅ Done
+
+<?php } ?>
+
+</td>
+
+</tr>
+
+<?php } ?>
+
+</table>
 
 </div>
 
